@@ -25,8 +25,7 @@ defmodule Cogctl.Actions.BundleList do
           id = bundle["id"]
           name = bundle["name"]
           installed = bundle["inserted_at"]
-          ns_id = get_in(bundle, ["namespace", "id"])
-          IO.puts "Bundle: #{name} (#{id}, ns: #{ns_id})\nInstalled: #{installed}\n"
+          IO.puts "Bundle: #{name} (id: #{id})\nInstalled: #{installed}\n"
         end
         :ok
       {:error, resp} ->
@@ -41,11 +40,10 @@ defmodule Cogctl.Actions.BundleList do
         id = get_in(resp, ["bundle", "id"])
         name = get_in(resp, ["bundle", "name"])
         installed = get_in(resp, ["bundle", "inserted_at"])
-        ns_id = get_in(resp, ["bundle", "namespace", "id"])
         cmdout = Enum.join(for command <- commands do
                              "  #{command["name"]} (#{command["id"]})"
                             end, "\n")
-        msg = "Bundle: #{name} (#{id}, ns: #{ns_id})\nInstalled: #{installed}\n" <>
+        msg = "Bundle: #{name} (id: #{id})\nInstalled: #{installed}\n" <>
               "Commands (#{length(commands)})\n" <> cmdout
         IO.puts msg
         :ok
