@@ -32,30 +32,36 @@ defmodule Cogctl.CogApi do
 
   def is_bootstrapped?(%__MODULE__{}=api) do
     response = HTTPotion.get(make_url(api, "bootstrap"), headers: make_headers(api))
-    {response_type(response), Poison.decode!(response.body)}
+    api_result(response)
   end
 
   def bootstrap(%__MODULE__{}=api) do
     response = HTTPotion.post(make_url(api, "bootstrap"))
-    {response_type(response), Poison.decode!(response.body)}
+    api_result(response)
   end
 
   def list_all_bundles(%__MODULE__{}=api) do
     response = HTTPotion.get(make_url(api, "bundles"),
                              headers: make_headers(api))
-    {response_type(response), Poison.decode!(response.body)}
+    api_result(response)
   end
 
   def bundle_info(%__MODULE__{}=api, bundle_id) do
-    response = HTTPotion.get(make_url(api, fn -> "bundles/" <> URI.encode(bundle_id) end),
+    response = HTTPotion.get(make_url(api, "bundles/" <> URI.encode(bundle_id)),
                              headers: make_headers(api))
-    {response_type(response), Poison.decode!(response.body)}
+    api_result(response)
+  end
+
+  def relays_for_bundle(%__MODULE__{}=api, bundle_id) do
+    response = HTTPotion.get(make_url(api, "bundles/" <> URI.encode(bundle_id) <> "/relays"),
+                                      headers: make_headers(api))
+    api_result(response)
   end
 
   def bundle_delete(%__MODULE__{}=api, bundle_id) do
     response = HTTPotion.delete(make_url(api, fn -> "bundles/" <> URI.encode(bundle_id) end),
                                 headers: make_headers(api))
-    response_type(response)
+    api_result(response)
   end
 
   defp make_url(%__MODULE__{proto: proto, host: host, port: port,
@@ -92,6 +98,19 @@ defmodule Cogctl.CogApi do
       :ok
     else
       :error
+    end
+  end
+
+  defp api_result(response) do
+    if response.status_code in [401, 403] do
+      {:error, %{"error" => "Authentication error"}}
+    else
+      response_type = response_type(response)
+      if response.body == nil or response.body == "" do
+        response_type
+      else
+        {response_type, Poison.decode!(response.body)}
+      end
     end
   end
 
